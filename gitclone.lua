@@ -38,10 +38,11 @@ local function clone(files)
             term.setCursorPos(x, y)
             term.clearLine()
             downloadedCount = downloadedCount + 1
+            local progressText = 'Receiving files:  ' .. (downloadedCount / #files * 100) .. '% (' .. downloadedCount .. '/' .. #files .. ')'
             if downloadedCount ~= #files then
-                term.write('Receiving files:  ' .. (downloadedCount / #files * 100) .. ' (' .. downloadedCount .. '/' .. #files .. ')')
+                term.write(progressText)
             else
-                print('Receiving files:  100% (' .. #files .. '/' .. #files .. '), done')
+                print(progressText)
             end
         end
         table.insert(processes, download)
