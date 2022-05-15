@@ -20,6 +20,7 @@ treeUrl = treeUrl:gsub('%[BRANCH]', branch)
 
 local function clone(files)
     local processes = {}
+    local x, y = term.getCursorPos()
     for i=1, #files do
         local function download()
             local filePath = fs.combine(localPath, files[i].path)
@@ -30,6 +31,8 @@ local function clone(files)
             local writer = fs.open(filePath, 'w')
             writer.write(content)
             writer.close()
+            term.setCursorPos(x, y)
+            term.write('Receiving:  ' .. (i / #files * 100) .. ' (' .. i .. '/' .. #files .. ')')
         end
         table.insert(processes, download)
     end
