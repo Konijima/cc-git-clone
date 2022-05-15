@@ -1,6 +1,8 @@
 # cc-git-clone
 ComputerCraft program to clone a git repo.
 
+![](https://github.com/Konijima/cc-git-clone/blob/master/Screenshot_1.png?raw=true)
+
 ## Install
 ```lua
 wget https://raw.githubusercontent.com/Konijima/cc-git-clone/master/gitclone.lua
