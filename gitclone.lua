@@ -27,6 +27,7 @@ local function clone(files)
         fs.delete(localRepoPath)
     end
 
+    local downloadedCount = 0
     for i=1, #files do
         local function download()
             local filePath = fs.combine(localRepoPath, files[i].path)
@@ -35,10 +36,11 @@ local function clone(files)
             writer.write(content)
             writer.close()
             term.setCursorPos(x, y)
-            if i < #files then
-                term.write('Receiving files:  ' .. (i / #files * 100) .. ' (' .. i .. '/' .. #files .. ')')
+            downloadedCount = downloadedCount + 1
+            if downloadedCount ~= #files then
+                term.write('Receiving files:  ' .. (downloadedCount / #files * 100) .. ' (' .. downloadedCount .. '/' .. #files .. ')')
             else
-                print('Receiving files:  ' .. (i / #files * 100) .. ' (' .. i .. '/' .. #files .. '), done')
+                print('Receiving files:  100% (' .. #files .. '/' .. #files .. '), done')
             end
         end
         table.insert(processes, download)
