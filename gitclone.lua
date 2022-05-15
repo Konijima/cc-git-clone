@@ -36,6 +36,7 @@ local function clone(files)
             writer.write(content)
             writer.close()
             term.setCursorPos(x, y)
+            term.clearLine()
             downloadedCount = downloadedCount + 1
             if downloadedCount ~= #files then
                 term.write('Receiving files:  ' .. (downloadedCount / #files * 100) .. ' (' .. downloadedCount .. '/' .. #files .. ')')
