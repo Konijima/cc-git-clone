@@ -21,12 +21,15 @@ treeUrl = treeUrl:gsub('%[BRANCH]', branch)
 local function clone(files)
     local processes = {}
     local x, y = term.getCursorPos()
+
+    local localRepoPath = fs.combine(localPath, repo)
+    if fs.exists(localRepoPath) then
+        fs.delete(localRepoPath)
+    end
+
     for i=1, #files do
         local function download()
-            local filePath = fs.combine(localPath, files[i].path)
-            if fs.exists(filePath) then
-                fs.delete(filePath)
-            end
+            local filePath = fs.combine(localRepoPath, files[i].path)
             local content = http.get(files[i].url).readAll()
             local writer = fs.open(filePath, 'w')
             writer.write(content)
@@ -55,7 +58,7 @@ if not reason then
             url = url:gsub('%[REPO]', repo)
             url = url:gsub('%[BRANCH]', branch)
             url = url:gsub('%[PATH]', entry.path)
-            table.insert(files, { path = fs.combine(repo, entry.path), url = url })
+            table.insert(files, { path = entry.path, url = url })
         end
     end
     print('Cloning into ' .. repo .. '...')
