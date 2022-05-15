@@ -32,12 +32,15 @@ local function clone(files)
             writer.write(content)
             writer.close()
             term.setCursorPos(x, y)
-            term.write('Receiving:  ' .. (i / #files * 100) .. ' (' .. i .. '/' .. #files .. ')')
+            if i < #files then
+                term.write('Receiving files:  ' .. (i / #files * 100) .. ' (' .. i .. '/' .. #files .. ')')
+            else
+                print('Receiving files:  ' .. (i / #files * 100) .. ' (' .. i .. '/' .. #files .. '), done')
+            end
         end
         table.insert(processes, download)
     end
     parallel.waitForAll(table.unpack(processes))
-    print('Resolving deltas: 100% (' .. #files .. '/' .. #files .. '), done.')
 end
 
 local res, reason = http.get(treeUrl)
