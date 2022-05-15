@@ -1,5 +1,5 @@
 # cc-git-clone
-ComputerCraft program to clone a git repo.
+ComputerCraft program to clone a **github** repo.
 
 ![](https://github.com/Konijima/cc-git-clone/blob/master/Screenshot_1.png?raw=true)
 
