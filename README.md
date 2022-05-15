@@ -3,7 +3,7 @@ ComputerCraft program to clone a git repo.
 
 ## Install
 ```lua
-wget to_be_changed
+wget https://raw.githubusercontent.com/Konijima/cc-git-clone/master/gitclone.lua
 ```
 
 ## Clone Repo
