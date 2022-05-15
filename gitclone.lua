@@ -43,12 +43,14 @@ if not reason then
     tree = textutils.unserialiseJSON(tree)
     local files = {}
     for k,entry in pairs(tree.tree) do
-        local url = rawFileUrl
-        url = url:gsub('%[USER]', user)
-        url = url:gsub('%[REPO]', repo)
-        url = url:gsub('%[BRANCH]', branch)
-        url = url:gsub('%[PATH]', entry.path)
-        table.insert(files, { path = fs.combine(repo, entry.path), url = url })
+        if entry.type ~= "tree" then
+            local url = rawFileUrl
+            url = url:gsub('%[USER]', user)
+            url = url:gsub('%[REPO]', repo)
+            url = url:gsub('%[BRANCH]', branch)
+            url = url:gsub('%[PATH]', entry.path)
+            table.insert(files, { path = fs.combine(repo, entry.path), url = url })
+        end
     end
     print('Cloning into ' .. repo .. '...')
     clone(files)
