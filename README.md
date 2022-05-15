@@ -12,7 +12,7 @@ wget https://raw.githubusercontent.com/Konijima/cc-git-clone/master/gitclone.lua
 --- USER, Required, git username
 --- REPO, Required, git repo name
 --- BRANCH, Required, git repo branch to clone
---- PATH, Optional, local path to save the repo inside, if omitted will clone into the current working directory
+--- PATH, Optional, local path to save the repo inside, default to current working directory
 gitclone <USER> <REPO> <BRANCH> <PATH>
 ```
 
@@ -20,14 +20,14 @@ gitclone <USER> <REPO> <BRANCH> <PATH>
 Exemple 1:
 ```lua
 -- Command
-gitclone Konijima cc-git-clone master
+gitclone Konijima some-repo master
 -- Result directory
-/cc-radio-player/
+/some-repo/
 ```
 Exemple 2:
 ```lua
 -- Command
-gitclone Konijima cc-git-clone master /programs
+gitclone Konijima some-repo /programs
 -- Result directory
-/programs/cc-radio-player/
+/programs/some-repo/
 ```
