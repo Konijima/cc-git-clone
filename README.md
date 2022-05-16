@@ -38,5 +38,5 @@ Example 3: (One liner install)
 -- Command
 wget run https://raw.githubusercontent.com/Konijima/cc-git-clone/master/gitclone.lua Konijima some-repo master /programs
 -- Result directory
-/some-repo/
+/programs/some-repo/
 ```
