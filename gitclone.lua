@@ -31,10 +31,20 @@ local function clone(files)
     for i=1, #files do
         local function download()
             local filePath = fs.combine(localRepoPath, files[i].path)
-            local content = http.get(files[i].url).readAll()
-            local writer = fs.open(filePath, 'w')
+
+            local request = http.get(files[i].url, nil, files[i].binary)
+            local content = request.readAll()
+            request.close()
+
+            local mode = 'w'
+            if files[i].binary then
+                mode = 'wb'
+            end
+            
+            local writer = fs.open(filePath, mode)
             writer.write(content)
             writer.close()
+
             term.setCursorPos(x, y)
             term.clearLine()
             downloadedCount = downloadedCount + 1
@@ -62,7 +72,7 @@ if not reason then
             url = url:gsub('%[REPO]', repo)
             url = url:gsub('%[BRANCH]', branch)
             url = url:gsub('%[PATH]', entry.path)
-            table.insert(files, { path = entry.path, url = url })
+            table.insert(files, { path = entry.path, url = url, binary = entry.type == "blob" })
         end
     end
     print('Cloning into ' .. repo .. '...')
