@@ -19,17 +19,24 @@ gitclone <USER> <REPO> <BRANCH> <PATH>
 ```
 
 ## Exemples
-Exemple 1:
+Exemple 1 (install in current working directory):
 ```lua
 -- Command
 gitclone Konijima some-repo master
 -- Result directory
 /some-repo/
 ```
-Exemple 2:
+Exemple 2: (install in absolute directory)
 ```lua
 -- Command
-gitclone Konijima some-repo /programs
+gitclone Konijima some-repo master /programs
 -- Result directory
 /programs/some-repo/
+```
+Example 3: (One liner install)
+```lua
+-- Command
+wget run https://raw.githubusercontent.com/Konijima/cc-git-clone/master/gitclone.lua Konijima some-repo master /programs
+-- Result directory
+/some-repo/
 ```
