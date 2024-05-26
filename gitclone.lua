@@ -25,9 +25,29 @@ local function clone(files)
     local x, y = term.getCursorPos()
 
     local downloadedCount = 0
+
+    local function step_progress()
+        term.setCursorPos(x, y)
+        term.clearLine()
+        downloadedCount = downloadedCount + 1
+        local progressText = 'Receiving files:  ' .. (downloadedCount / #files * 100) .. '% (' .. downloadedCount .. '/' .. #files .. ')'
+        if downloadedCount ~= #files then
+            term.write(progressText)
+        else
+            print(progressText)
+        end
+    end
+
     for i=1, #files do
         local function download()
             local filePath = fs.combine(localRepoPath, files[i].path)
+
+            if fs.exists(filePath) then
+                if fs.getSize(filePath) == files[i].size then
+                    step_progress()
+                    return
+                end
+            end
 
             local request = http.get(files[i].url, nil, files[i].binary)
             local content = request.readAll()
@@ -41,16 +61,7 @@ local function clone(files)
             local writer = fs.open(filePath, mode)
             writer.write(content or '')
             writer.close()
-
-            term.setCursorPos(x, y)
-            term.clearLine()
-            downloadedCount = downloadedCount + 1
-            local progressText = 'Receiving files:  ' .. (downloadedCount / #files * 100) .. '% (' .. downloadedCount .. '/' .. #files .. ')'
-            if downloadedCount ~= #files then
-                term.write(progressText)
-            else
-                print(progressText)
-            end
+            step_progress()
         end
         table.insert(processes, download)
     end
@@ -91,7 +102,7 @@ local function cloneSubmodules(modules)
             for k, entry in pairs(tree.tree) do
                 if entry.type ~= "tree" and entry.type ~= "commit" then
                     local url = submoduleRawFileUrl:gsub('%[PATH]', entry.path)
-                    table.insert(files, { path = module.path .. '/' .. entry.path, url = url, binary = entry.type == "blob" })
+                    table.insert(files, { path = module.path .. '/' .. entry.path, url = url, binary = entry.type == "blob", size = entry.size })
                 end
             end
             print('Cloning submodule into ' .. submodulePath .. '...')
@@ -104,10 +115,6 @@ end
 
 local res, reason = http.get(treeUrl)
 if not reason then
-    if fs.exists(localRepoPath) then
-        fs.delete(localRepoPath)
-    end
-
     local tree = res.readAll()
     tree = textutils.unserialiseJSON(tree)
     local files = {}
@@ -118,7 +125,7 @@ if not reason then
             url = url:gsub('%[REPO]', repo)
             url = url:gsub('%[BRANCH]', branch)
             url = url:gsub('%[PATH]', entry.path)
-            table.insert(files, { path = entry.path, url = url, binary = entry.type == "blob" })
+            table.insert(files, { path = entry.path, url = url, binary = entry.type == "blob", size = entry.size })
         end
     end
     print('Cloning into ' .. repo .. '...')
