@@ -79,7 +79,7 @@ local function parseGitModules()
     file.close()
 
     local modules = {}
-    for module, path, url in content:gmatch('%[submodule "(.-)"%][^%[]-path = (.-)\n[^%[]-url = (.-)\n') do
+    for module, path, url in content:gmatch('%[submodule "(.-)"%]%s*path = ([^\n]+)%s*url = ([^\n]+)') do
         table.insert(modules, {path = path, url = url})
     end
 
@@ -89,8 +89,43 @@ end
 local function cloneSubmodules(modules)
     for _, module in ipairs(modules) do
         local submodulePath = fs.combine(localPath, repo, module.path)
-        local user, submoduleRepo = module.url:match('https://github.com/(.-)/([^.]+)')
-        local submoduleBranch = 'master'  -- Assuming 'master' as default branch
+        local user, submoduleRepo, submoduleBranch = '', '', ''
+
+        -- Get user and repo.
+        if module.url:match('^https://') then
+            user, submoduleRepo = module.url:match('https://github.com/(.-)/([^/]+)%.git$')
+            if not submoduleRepo then
+                user, submoduleRepo = module.url:match('https://github.com/(.-)/([^/]+)')
+            end
+        elseif module.url:match('^git@') then
+            user, submoduleRepo = module.url:match('git@github.com:(.-)/([^/]+)%.git$')
+            if not submoduleRepo then
+                user, submoduleRepo = module.url:match('git@github.com:(.-)/([^/]+)')
+            end
+        end
+
+        -- Get default branch.
+        local checkBranchUrl = 'https://api.github.com/repos/' .. user .. '/' .. submoduleRepo
+        local branchRes, branchReason = http.get(checkBranchUrl)
+        if branchRes then
+            local repoInfo = textutils.unserialiseJSON(branchRes.readAll())
+            if repoInfo.default_branch then
+                submoduleBranch = repoInfo.default_branch
+            end
+            branchRes.close()
+        else
+            printError('Failed to fetch repository info: ' .. (branchReason or 'Unknown error'))
+            return
+        end
+
+        if user == '' or submoduleRepo == '' then
+            printError('Failed to parse user and repo from URL: ' .. module.url)
+            return
+        elseif submoduleBranch == '' then
+            printError('Failed to parse branch from URL: ' .. module.url)
+            return
+        end
+
         local submoduleTreeUrl = 'https://api.github.com/repos/' .. user .. '/' .. submoduleRepo .. '/git/trees/' .. submoduleBranch .. '?recursive=1'
         local submoduleRawFileUrl = 'https://raw.githubusercontent.com/' .. user .. '/' .. submoduleRepo .. '/' .. submoduleBranch .. '/[PATH]'
 
