@@ -86,65 +86,76 @@ local function parseGitModules()
     return modules
 end
 
+local function cloneSubmodule(module)
+    local submodulePath = fs.combine(localPath, repo, module.path)
+    local submodule_name = fs.getName(module.path)
+
+    -- Check if submodule already exists
+    if fs.exists(submodulePath) then
+        --print('Submodule ' .. submodule_name .. ' already exists, skipping.')
+        return
+    end
+    local user, submoduleRepo, submoduleBranch = '', '', ''
+
+    -- Get user and repo.
+    if module.url:match('^https://') then
+        user, submoduleRepo = module.url:match('https://github.com/(.-)/([^/]+)%.git$')
+        if not submoduleRepo then
+            user, submoduleRepo = module.url:match('https://github.com/(.-)/([^/]+)')
+        end
+    elseif module.url:match('^git@') then
+        user, submoduleRepo = module.url:match('git@github.com:(.-)/([^/]+)%.git$')
+        if not submoduleRepo then
+            user, submoduleRepo = module.url:match('git@github.com:(.-)/([^/]+)')
+        end
+    end
+
+    -- Get default branch.
+    local checkBranchUrl = 'https://api.github.com/repos/' .. user .. '/' .. submoduleRepo
+    local branchRes, branchReason = http.get(checkBranchUrl)
+    if branchRes then
+        local repoInfo = textutils.unserialiseJSON(branchRes.readAll())
+        if repoInfo.default_branch then
+            submoduleBranch = repoInfo.default_branch
+        end
+        branchRes.close()
+    else
+        printError('Failed to fetch repository info: ' .. (branchReason or 'Unknown error'))
+        return
+    end
+
+    if user == '' or submoduleRepo == '' then
+        printError('Failed to parse user and repo from URL: ' .. module.url)
+        return
+    elseif submoduleBranch == '' then
+        printError('Failed to parse branch from URL: ' .. module.url)
+        return
+    end
+
+    local submoduleTreeUrl = 'https://api.github.com/repos/' .. user .. '/' .. submoduleRepo .. '/git/trees/' .. submoduleBranch .. '?recursive=1'
+    local submoduleRawFileUrl = 'https://raw.githubusercontent.com/' .. user .. '/' .. submoduleRepo .. '/' .. submoduleBranch .. '/[PATH]'
+
+    local res, reason = http.get(submoduleTreeUrl)
+    if not reason then
+        local tree = res.readAll()
+        tree = textutils.unserialiseJSON(tree)
+        local files = {}
+        for k, entry in pairs(tree.tree) do
+            if entry.type ~= "tree" and entry.type ~= "commit" then
+                local url = submoduleRawFileUrl:gsub('%[PATH]', entry.path)
+                table.insert(files, { path = module.path .. '/' .. entry.path, url = url, binary = entry.type == "blob", size = entry.size })
+            end
+        end
+        print('Cloning submodule ' .. submodule_name .. '...')
+        clone(files)
+    else
+        printError(reason)
+    end
+end
+
 local function cloneSubmodules(modules)
     for _, module in ipairs(modules) do
-        local submodulePath = fs.combine(localPath, repo, module.path)
-        local user, submoduleRepo, submoduleBranch = '', '', ''
-
-        -- Get user and repo.
-        if module.url:match('^https://') then
-            user, submoduleRepo = module.url:match('https://github.com/(.-)/([^/]+)%.git$')
-            if not submoduleRepo then
-                user, submoduleRepo = module.url:match('https://github.com/(.-)/([^/]+)')
-            end
-        elseif module.url:match('^git@') then
-            user, submoduleRepo = module.url:match('git@github.com:(.-)/([^/]+)%.git$')
-            if not submoduleRepo then
-                user, submoduleRepo = module.url:match('git@github.com:(.-)/([^/]+)')
-            end
-        end
-
-        -- Get default branch.
-        local checkBranchUrl = 'https://api.github.com/repos/' .. user .. '/' .. submoduleRepo
-        local branchRes, branchReason = http.get(checkBranchUrl)
-        if branchRes then
-            local repoInfo = textutils.unserialiseJSON(branchRes.readAll())
-            if repoInfo.default_branch then
-                submoduleBranch = repoInfo.default_branch
-            end
-            branchRes.close()
-        else
-            printError('Failed to fetch repository info: ' .. (branchReason or 'Unknown error'))
-            return
-        end
-
-        if user == '' or submoduleRepo == '' then
-            printError('Failed to parse user and repo from URL: ' .. module.url)
-            return
-        elseif submoduleBranch == '' then
-            printError('Failed to parse branch from URL: ' .. module.url)
-            return
-        end
-
-        local submoduleTreeUrl = 'https://api.github.com/repos/' .. user .. '/' .. submoduleRepo .. '/git/trees/' .. submoduleBranch .. '?recursive=1'
-        local submoduleRawFileUrl = 'https://raw.githubusercontent.com/' .. user .. '/' .. submoduleRepo .. '/' .. submoduleBranch .. '/[PATH]'
-
-        local res, reason = http.get(submoduleTreeUrl)
-        if not reason then
-            local tree = res.readAll()
-            tree = textutils.unserialiseJSON(tree)
-            local files = {}
-            for k, entry in pairs(tree.tree) do
-                if entry.type ~= "tree" and entry.type ~= "commit" then
-                    local url = submoduleRawFileUrl:gsub('%[PATH]', entry.path)
-                    table.insert(files, { path = module.path .. '/' .. entry.path, url = url, binary = entry.type == "blob", size = entry.size })
-                end
-            end
-            print('Cloning submodule into ' .. submodulePath .. '...')
-            clone(files)
-        else
-            printError(reason)
-        end
+        cloneSubmodule(module)
     end
 end
 
