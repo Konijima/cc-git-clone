@@ -26,11 +26,11 @@ local function clone(files)
 
     local downloadedCount = 0
 
-    local function step_progress()
+    local function step_progress(leading_text)
         term.setCursorPos(x, y)
         term.clearLine()
         downloadedCount = downloadedCount + 1
-        local progressText = 'Receiving files:  ' .. (downloadedCount / #files * 100) .. '% (' .. downloadedCount .. '/' .. #files .. ')'
+        local progressText = leading_text .. ': ' .. (downloadedCount / #files * 100) .. '% (' .. downloadedCount .. '/' .. #files .. ')'
         if downloadedCount ~= #files then
             term.write(progressText)
         else
@@ -44,7 +44,7 @@ local function clone(files)
 
             if fs.exists(filePath) then
                 if fs.getSize(filePath) == files[i].size then
-                    step_progress()
+                    step_progress('Checking files')
                     return
                 end
             end
@@ -61,7 +61,7 @@ local function clone(files)
             local writer = fs.open(filePath, mode)
             writer.write(content or '')
             writer.close()
-            step_progress()
+            step_progress('Receiving files')
         end
         table.insert(processes, download)
     end
